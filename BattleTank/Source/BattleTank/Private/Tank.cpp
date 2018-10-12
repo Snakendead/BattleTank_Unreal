@@ -1,9 +1,12 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Tank.h"
+#include "GameFramework/Pawn.h"
+
 #include "Public/Tank.h"
 #include "Public/TankAimingComponent.h"
 #include "Public/BarrelMeshComponent.h"
+#include "Public/TurretMeshComponent.h"
 
 // Sets default values
 ATank::ATank()
@@ -22,6 +25,11 @@ void ATank::AimAt(FVector HitLocation)
 void ATank::SetBarrelReference(UBarrelMeshComponent * BarrelToSet)
 {
 	TankAimingComponent->SetBarrelReference(BarrelToSet);
+}
+
+void ATank::SetTurretReference(UTurretMeshComponent * TurretToSet)
+{
+	TankAimingComponent->SetTurretReference(TurretToSet);
 }
 
 // Called when the game starts or when spawned
