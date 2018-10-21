@@ -65,7 +65,7 @@ bool ATankPlayerController::GetLookDirection(FVector2D ScreenLocation, FVector& 
 }
 
  bool ATankPlayerController::GetLookVectorHitLocation(FVector LookDirection, FVector& HitLocation) const {
-	float LineTraceRange = 10.f * 100.f * 100.f; // 10km
+	float LineTraceRange = 100.f * 100.f * 100.f; // 10km
 
 	FCollisionQueryParams TraceParameters = FCollisionQueryParams(FName(TEXT("")), false, GetOwner());
 	FHitResult Hit;

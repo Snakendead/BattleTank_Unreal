@@ -24,4 +24,5 @@ public:
 	ATank* GetControlledTank() const;
 	ATank* GetPlayerTank() const;
 
+	float AcceptanceRadius = 3000;
 };
