@@ -9,7 +9,7 @@ void UTankMovementComponent::Initialize(UTankTrackMeshComponent* LeftTrackToSet,
 }
 
 void UTankMovementComponent::IntendMoveForward(float Throw) {
-	if (!LeftTrack || !RigthTrack) {
+	if (!ensure(LeftTrack || RigthTrack)) {
 		return;
 	}
 
@@ -20,7 +20,7 @@ void UTankMovementComponent::IntendMoveForward(float Throw) {
 }
 
 void UTankMovementComponent::IntendTurnRight(float Throw) {
-	if (!LeftTrack || !RigthTrack) {
+	if (!ensure(LeftTrack || RigthTrack)) {
 		return;
 	}
 
@@ -37,5 +37,4 @@ void UTankMovementComponent::RequestDirectMove(const FVector & MoveVelocity, boo
 	auto TurnThrow = FVector::CrossProduct(AIForwardIntention, TankForward);
 	IntendMoveForward(ForwardThrow);
 	IntendTurnRight(TurnThrow.Z);
-	UE_LOG(LogTemp, Warning, TEXT("Direct move request name: %s, throw %f"), *GetOwner()->GetName(), ForwardThrow)
 }

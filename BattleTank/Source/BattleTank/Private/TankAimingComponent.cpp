@@ -6,6 +6,7 @@
 #include "Public/TankAimingComponent.h"
 #include "Public/BarrelMeshComponent.h"
 #include "Public/TurretMeshComponent.h"
+#include "Public/ProjectileActor.h"
 #include "Kismet/GameplayStatics.h"
 
 
@@ -17,16 +18,6 @@ UTankAimingComponent::UTankAimingComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 
 	// ...
-}
-
-void UTankAimingComponent::SetBarrelReference(UBarrelMeshComponent * BarrelToSet)
-{
-	Barrel = BarrelToSet;
-}
-
-void UTankAimingComponent::SetTurretReference(UTurretMeshComponent * TurretToSet)
-{
-	Turret = TurretToSet;
 }
 
 // Called when the game starts
@@ -47,10 +38,16 @@ void UTankAimingComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 	// ...
 }
 
-void UTankAimingComponent::AimAt(FVector WorldSpaceAim, float LaunchSpeed) {
+void UTankAimingComponent::Initialize(UBarrelMeshComponent * BarrelToSet, UTurretMeshComponent * TurretToSet)
+{
+	Barrel = BarrelToSet;
+	Turret = TurretToSet;
+}
 
-	if (!Barrel) { return; }
-	if (!Turret) { return; }
+void UTankAimingComponent::AimAt(FVector WorldSpaceAim) {
+
+	if (!ensure(Barrel)) { return; }
+	if (!ensure(Turret)) { return; }
 
 	FVector OutLaunchVelocity;
 	FVector StartLocation = Barrel->GetSocketLocation(FName("Projectile"));
@@ -84,4 +81,24 @@ void UTankAimingComponent::MoveBarrelTowards(FVector AimDirection) {
 
 	Barrel->Elevate(DeltaRotator.Pitch);
 	Turret->Rotate(DeltaRotator.Yaw);
+}
+
+void UTankAimingComponent::Fire() {
+
+	bool isReloaded = (FPlatformTime::Seconds() - LastFireTime) > ReloadTimeInSeconds;
+
+	if (!isReloaded) { return; }
+	LastFireTime = FPlatformTime::Seconds();
+	UE_LOG(LogTemp, Warning, TEXT("1"))
+
+	if (!ensure(Barrel)) { return; }
+	if (!ensure(ProjectileBlueprint)) { return; }
+	
+	UE_LOG(LogTemp, Warning, TEXT("2"))
+
+	FVector StartLocation = Barrel->GetSocketLocation(FName("Projectile"));
+	FRotator Rotator = Barrel->GetSocketRotation(FName("Projectile"));;
+
+	auto Projectile = GetWorld()->SpawnActor<AProjectileActor>(ProjectileBlueprint, StartLocation, Rotator);
+	Projectile->LaunchProjectile(LaunchSpeed);
 }
