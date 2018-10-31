@@ -10,7 +10,8 @@ UENUM()
 enum class EFiringStatus : uint8 {
 	Aiming,
 	Reloading,
-	Locked
+	Locked,
+	EmptyAmmo
 };
 
 class UBarrelMeshComponent;
@@ -26,18 +27,24 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Setup")
 	void Initialize(UBarrelMeshComponent* BarrelToSet, UTurretMeshComponent* TurretToSet);
 
+	bool isBarrelMoving();
+
 	void AimAt(FVector WorldSpaceAim);
 	void MoveBarrelTowards(FVector AimDirection);
 	
 	UFUNCTION(BlueprintCallable, Category = "Set")
 	void Fire();
 
+	EFiringStatus GetFiringStatus() const;
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
 	UPROPERTY(BlueprintReadOnly, Category = "State")
-	EFiringStatus FiringStatus = EFiringStatus::Locked;
+	EFiringStatus FiringStatus = EFiringStatus::Reloading;
+
+	UPROPERTY(BlueprintReadOnly, Category = "State")
+	int32 AmmoLeft = 25;
 
 private:	
 	// Called every frame
@@ -53,10 +60,11 @@ private:
 	TSubclassOf<AProjectileActor> ProjectileBlueprint;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Setup")
-	float ReloadTimeInSeconds = 2.f;
+	float ReloadTimeInSeconds = 0.5f;
 
 	UTurretMeshComponent* Turret;
 	UBarrelMeshComponent* Barrel;
 
 	float LastFireTime = 0.f;
+	FVector AimDirection;
 };

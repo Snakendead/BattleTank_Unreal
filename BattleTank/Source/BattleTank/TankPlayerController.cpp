@@ -5,6 +5,7 @@
 #include "Engine/World.h"
 
 #include "Public/TankAimingComponent.h"
+#include "Public/Tank.h"
 
 
 void ATankPlayerController::BeginPlay() {
@@ -23,10 +24,13 @@ void ATankPlayerController::Tick(float DeltaTime)
 
 void ATankPlayerController::AimRowardsCrosshair() {
 
+	if (!GetPawn()) { return; }
 	auto AimingComponent = GetPawn()->FindComponentByClass<UTankAimingComponent>();
 	
 	FVector HitLocation; //Out param
-	if (!ensure(GetSightRayHitLocation(HitLocation))) {
+
+	bool bGotHitLocation = GetSightRayHitLocation(HitLocation);
+	if (!bGotHitLocation) {
 		return;
 	}
 
@@ -42,8 +46,7 @@ bool ATankPlayerController::GetSightRayHitLocation(FVector& HitLocation) const {
 	
 	FVector LookDirection;
 	if (GetLookDirection(ScreenLocation, LookDirection)) {
-		GetLookVectorHitLocation(LookDirection, HitLocation);
-		return true;
+		return GetLookVectorHitLocation(LookDirection, HitLocation);
 	}
 
 	return false;
@@ -81,3 +84,18 @@ bool ATankPlayerController::GetLookDirection(FVector2D ScreenLocation, FVector& 
 
 	return false;
 }
+
+ void ATankPlayerController::SetPawn(APawn * InPawn)
+ {
+	 Super::SetPawn(InPawn);
+	 if (!InPawn) { return; }
+
+	 auto PossessedTank = Cast<ATank>(InPawn);
+	 if (!ensure(PossessedTank)) { return; }
+
+	 PossessedTank->OnDeath.AddUniqueDynamic(this, &ATankPlayerController::TankDeath);
+ }
+
+ void ATankPlayerController::TankDeath() {
+	 StartSpectatingOnly();
+ }

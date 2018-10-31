@@ -24,9 +24,7 @@ UTankAimingComponent::UTankAimingComponent()
 void UTankAimingComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// ...
-	
+	LastFireTime = GetWorld()->GetTimeSeconds();
 }
 
 
@@ -35,6 +33,18 @@ void UTankAimingComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
+	if (AmmoLeft == 0) {
+		FiringStatus = EFiringStatus::EmptyAmmo;
+	}
+	else if ((GetWorld()->GetTimeSeconds() - LastFireTime) < ReloadTimeInSeconds) {
+		FiringStatus = EFiringStatus::Reloading;
+	}
+	else if (isBarrelMoving()) {
+		FiringStatus = EFiringStatus::Aiming;
+	}
+	else {
+		FiringStatus = EFiringStatus::Locked;
+	}
 	// ...
 }
 
@@ -42,6 +52,11 @@ void UTankAimingComponent::Initialize(UBarrelMeshComponent * BarrelToSet, UTurre
 {
 	Barrel = BarrelToSet;
 	Turret = TurretToSet;
+}
+
+bool UTankAimingComponent::isBarrelMoving() {
+	if (!ensure(Barrel)) { return false; }
+	return !AimDirection.Equals(Barrel->GetForwardVector(), 0.01f);
 }
 
 void UTankAimingComponent::AimAt(FVector WorldSpaceAim) {
@@ -65,12 +80,11 @@ void UTankAimingComponent::AimAt(FVector WorldSpaceAim) {
 	);
 
 	if (!bHaveAimSolution) {
-		auto Time = GetWorld()->GetTimeSeconds();
-		UE_LOG(LogTemp, Warning, TEXT("No aim solved: %f"), Time)
+		UE_LOG(LogTemp, Warning, TEXT("No solution for %s"), *GetOwner()->GetName())
 		return;
 	}
 
-	auto AimDirection = OutLaunchVelocity.GetSafeNormal();
+	AimDirection = OutLaunchVelocity.GetSafeNormal();
 	MoveBarrelTowards(AimDirection);
 }
 
@@ -80,25 +94,34 @@ void UTankAimingComponent::MoveBarrelTowards(FVector AimDirection) {
 	auto DeltaRotator = AimAsRotator - BarrelRotator;
 
 	Barrel->Elevate(DeltaRotator.Pitch);
-	Turret->Rotate(DeltaRotator.Yaw);
+
+	if (FMath::Abs(DeltaRotator.Yaw) < 180) {
+		Turret->Rotate(DeltaRotator.Yaw);
+	}
+	else {
+		Turret->Rotate(-DeltaRotator.Yaw);
+	}
 }
 
 void UTankAimingComponent::Fire() {
 
-	bool isReloaded = (FPlatformTime::Seconds() - LastFireTime) > ReloadTimeInSeconds;
-
-	if (!isReloaded) { return; }
-	LastFireTime = FPlatformTime::Seconds();
-	UE_LOG(LogTemp, Warning, TEXT("1"))
+	if (FiringStatus == EFiringStatus::Reloading) { return; }
+	if (FiringStatus == EFiringStatus::EmptyAmmo) { return; }
 
 	if (!ensure(Barrel)) { return; }
 	if (!ensure(ProjectileBlueprint)) { return; }
 	
-	UE_LOG(LogTemp, Warning, TEXT("2"))
-
 	FVector StartLocation = Barrel->GetSocketLocation(FName("Projectile"));
 	FRotator Rotator = Barrel->GetSocketRotation(FName("Projectile"));;
 
 	auto Projectile = GetWorld()->SpawnActor<AProjectileActor>(ProjectileBlueprint, StartLocation, Rotator);
 	Projectile->LaunchProjectile(LaunchSpeed);
+	LastFireTime = GetWorld()->GetTimeSeconds();
+
+	AmmoLeft -= 1;
+}
+
+EFiringStatus UTankAimingComponent::GetFiringStatus() const
+{
+	return FiringStatus;
 }

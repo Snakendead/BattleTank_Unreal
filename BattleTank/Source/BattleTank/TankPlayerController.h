@@ -29,13 +29,19 @@ public:
 
 	bool GetLookVectorHitLocation(FVector LookDirection, FVector& HitLocation) const;
 
+	virtual void SetPawn(APawn * InPawn) override;
+
 	UPROPERTY(EditDefaultsOnly)
 	float CrosshairXLocation = 0.5f;
 
 	UPROPERTY(EditDefaultsOnly)
 	float CrosshairYLocation = 0.33333f;
 
+	UFUNCTION()
+		void TankDeath();
+
 protected:
+
 	UFUNCTION(BlueprintImplementableEvent, Category = "Setup")
 	void FoundAimingComponent(UTankAimingComponent* AimCompRef);
 };
